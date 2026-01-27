@@ -26,6 +26,7 @@ Note: I Used AI agent to create this README.md file, the server is written by me
 ### Configuration
 
 Edit `src/main/resources/default-config.json`:
+(Password must not set as a plain text that is huge security risk but the webserver is not for production use. )
 
 ```json
 {
