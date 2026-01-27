@@ -2,7 +2,7 @@
 
 A lightweight Java HTTP server with PostgreSQL integration, built from scratch using sockets and JDBC. Serves static files, handles dynamic routes, and provides database connectivity for building full-stack applications.
 
-Note: I Used AI agent to create this README.md file, the server is written by me but this file is written by AI cause I think it dose way better job in documenting than I would every do.
+Note: I Used AI agent to create this README.md file, the server is written by me but this file is written by AI cause I think it dose way better job in documenting than I would do.
 
 ## Features
 
