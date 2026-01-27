@@ -62,9 +62,6 @@ public class Route {
 
     public void executeRoute(OutputStream out, Request request) throws IOException {
         Response response = new Response();
-        if (route.contains(".css") || route.contains(".js")) {
-            response.httpFileResponse(route);
-        }
 
         for (Map.Entry<String, ArrayList<Middleware>> element : Server.middlewares.entrySet()) {
             if (route.contains(element.getKey())) {

@@ -27,9 +27,11 @@ class RequestUser {
 
 public class App {
     public static void main(String[] args) throws IOException {
+
         Server server = new Server(3);
         server.enableDatabaseConnection();
-        server.addRoute("GET", "/", (req, res) -> {
+
+        server.get("/", (req, res) -> {
             res.setStatusCode(200);
             try {
                 res.httpFileResponse("/index.html");
@@ -39,6 +41,43 @@ public class App {
             return res;
 
         });
+
+        server.post("/users/update", (req, res, db) -> {
+            var requestData = req.getBodyAsJson(RequestUser.class);
+            if (requestData == null) {
+                res.setStatusCode(400);
+                res.json("Invalid JSON body");
+                return res;
+            }
+            try {
+                db.updateOne("""
+                        UPDATE CUSTOM_USERS
+                        SET USERNAME = ?
+                        WHERE ID = ?
+                        """, requestData.username, requestData.id);
+                var updatedUser = db.queryForSingleObject(
+                        "SELECT id, username, password FROM CUSTOM_USERS WHERE id = ?",
+                        User.class, requestData.id);
+                System.err.println("Updated user: " + updatedUser);
+                if (updatedUser == null) {
+                    res.setStatusCode(404);
+                    res.json("User not found after update");
+                    return res;
+                }
+
+                res.setStatusCode(200);
+                res.json(updatedUser);
+                return res;
+            } catch (Exception e) {
+                e.printStackTrace();
+                res.setStatusCode(500);
+                HashMap<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Error retrieving updated user: " + e.getMessage());
+                res.json(errorResponse);
+                return res;
+            }
+        });
+
         server.get("/json", (req, res) -> {
             HashMap<String, Object> map = new HashMap<>();
             map.put("name", "Mohamed");
@@ -105,43 +144,6 @@ public class App {
             }
         });
 
-        server.post("/users/update", (req, res, db) -> {
-            var requestData = req.getBodyAsJson(RequestUser.class);
-            if (requestData == null) {
-                res.setStatusCode(400);
-                res.json("Invalid JSON body");
-                return res;
-            }
-
-            try {
-                db.updateOne("""
-                        UPDATE CUSTOM_USERS
-                        SET USERNAME = ?
-                        WHERE ID = ?
-                        """, requestData.username, requestData.id);
-                var updatedUser = db.queryForSingleObject(
-                        "SELECT id, username, password FROM CUSTOM_USERS WHERE id = ?",
-                        User.class, requestData.id);
-                System.err.println("Updated user: " + updatedUser);
-                if (updatedUser == null) {
-                    res.setStatusCode(404);
-                    res.json("User not found after update");
-                    return res;
-                }
-
-                res.setStatusCode(200);
-                res.json(updatedUser);
-                return res;
-            } catch (Exception e) {
-                e.printStackTrace();
-                res.setStatusCode(500);
-                HashMap<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Error retrieving updated user: " + e.getMessage());
-                res.json(errorResponse);
-                return res;
-            }
-
-        });
         server.start();
     }
 }

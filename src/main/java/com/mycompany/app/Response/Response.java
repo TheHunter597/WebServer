@@ -89,7 +89,7 @@ public class Response {
         StringBuilder builder = new StringBuilder();
         try {
             while ((read = stream.read(current)) != -1) {
-                String stringToAdd = new String(current, java.nio.charset.StandardCharsets.UTF_8);
+                String stringToAdd = new String(current, 0, read, java.nio.charset.StandardCharsets.UTF_8);
                 builder.append(stringToAdd);
                 current = new byte[2048];
             }

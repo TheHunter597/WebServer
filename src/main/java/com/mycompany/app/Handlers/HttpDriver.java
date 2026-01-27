@@ -2,6 +2,7 @@ package com.mycompany.app.Handlers;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import com.mycompany.app.Response.Route;
@@ -35,8 +36,7 @@ public class HttpDriver {
         } catch (NoSuchElementException e) {
             System.err.println("Route not found: " + route.getMethod() + " " + route.getRoute());
             foundRoute = new Route(route.getMethod(), route.getRoute(), (req, res) -> {
-
-                if (route.getRoute().split(".").length < 1) {
+                if (route.getRoute().split("\\.").length == 1) {
                     // if route is not found we are going to return the notfound file
                     // this would be set to the response getting back to the browser
 
@@ -46,9 +46,18 @@ public class HttpDriver {
                     // a file is returned the return content would be overwritten with the required
                     // file, not the notfound.html file
 
+                    System.err.println("Inside not found route handler");
                     res.setStatusCode(404);
                     try {
                         res.httpFileResponse("/notfound.html");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+                if (route.getRoute().contains(".css") || route.getRoute().contains(".js")) {
+                    System.err.println("Inside static file route handler");
+                    try {
+                        res.httpFileResponse(route.getRoute());
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
