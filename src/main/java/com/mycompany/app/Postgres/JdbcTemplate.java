@@ -20,32 +20,70 @@ public class JdbcTemplate extends PostgresDriver {
     }
 
     public ResultSet query(String sqlQuery) {
+        Connection conn = null;
+        java.sql.Statement stmt = null;
         try {
-            java.sql.Statement stmt = this.createStatement();
+            conn = this.createConnection();
+            stmt = this.createStatement(conn);
             return stmt.executeQuery(sqlQuery);
         } catch (SQLException e) {
             e.printStackTrace();
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
             throw new PostgresDatabaseConnectionError(e.getMessage());
         }
     }
 
     public ResultSet query(String sqlQuery, Connection conn) {
+        java.sql.Statement stmt = null;
         try {
-            java.sql.Statement stmt = this.createStatement(conn);
+            stmt = this.createStatement(conn);
             return stmt.executeQuery(sqlQuery);
         } catch (SQLException e) {
             e.printStackTrace();
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
             throw new PostgresDatabaseConnectionError(e.getMessage());
         }
     }
 
     public <T> T query(String sqlQuery, ResultSetExtractor<T> extractor) {
+        Connection conn = null;
+        java.sql.Statement stmt = null;
         try {
-            java.sql.Statement stmt = this.createStatement();
-            return extractor.extractData(stmt.executeQuery(sqlQuery));
+            conn = this.createConnection();
+            stmt = this.createStatement(conn);
+            T result = extractor.extractData(stmt.executeQuery(sqlQuery));
+            return result;
         } catch (SQLException e) {
             e.printStackTrace();
             throw new PostgresDatabaseConnectionError(e.getMessage());
+        } finally {
+            try {
+                if (stmt != null)
+                    stmt.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -55,6 +93,13 @@ public class JdbcTemplate extends PostgresDriver {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new PostgresDatabaseConnectionError(e.getMessage());
+        } finally {
+            try {
+                if (statement != null)
+                    statement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -67,12 +112,22 @@ public class JdbcTemplate extends PostgresDriver {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new PostgresDatabaseConnectionError(e.getMessage());
+        } finally {
+            try {
+                if (statement != null)
+                    statement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public <T> T queryForSingleObject(String sqlQuery, ResultSetExtractor<T> extractor) {
+        Connection conn = null;
+        java.sql.Statement stmt = null;
         try {
-            java.sql.Statement stmt = this.createStatement();
+            conn = this.createConnection();
+            stmt = this.createStatement(conn);
             ResultSet rs = stmt.executeQuery(sqlQuery);
             if (rs.next()) {
                 return extractor.extractData(rs);
@@ -82,43 +137,24 @@ public class JdbcTemplate extends PostgresDriver {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new PostgresDatabaseConnectionError(e.getMessage());
+        } finally {
+            try {
+                if (stmt != null)
+                    stmt.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    /**
-     * This method returns one single Object of your liking
-     * 
-     * <p>
-     * The provided SQL must select exactly one column. If multiple rows
-     * are returned, only the first row is consumed. If no rows are returned,
-     * this method returns {@code null}.
-     * </p>
-     *
-     * <p>
-     * The parameters are injected with the help of
-     * {@link java.sql.PreparedStatement}
-     * to prevent SQL injection.
-     * </p>
-     *
-     * @param <T>      the expected Java type of the result column
-     * @param sqlQuery either provide a static SQL query or a parameterized query
-     *                 like you can give something like "SELECT * FROM users
-     *                 WHERE id = ?" or just "SELECT * FROM users where id = 1"
-     * @param clazz    what is the type of the object instance you want to get back
-     * @param params   this if your sqlQuery is parameterized so you provide the
-     *                 values of the parameters according to their positions like
-     *                 the first parameter should be the first of params etc
-     * @return the mapped value if a row is found, or {@code null} if the result set
-     *         is empty
-     * @throws Exception
-     * @throws PostgresDatabaseConnectionError if a {@link SQLException} occurs
-     *                                         during execution
-     */
     public <T> T queryForSingleObject(String sqlQuery, Class<T> clazz, Object... params) throws Exception {
-        // I think there is absolutely a better easier way to do this, but really wanted
-        // to use reflections
+        Connection conn = null;
+        java.sql.PreparedStatement stmt = null;
         try {
-            java.sql.PreparedStatement stmt = this.getPreparedStatement(sqlQuery);
+            conn = this.createConnection();
+            stmt = this.getPreparedStatement(sqlQuery, conn);
             for (int i = 0; i < params.length; i++) {
                 stmt.setObject(i + 1, params[i]);
             }
@@ -142,13 +178,11 @@ public class JdbcTemplate extends PostgresDriver {
                     String setterName = "set" + Character.toUpperCase(fieldName.charAt(0))
                             + fieldName.substring(1);
                     for (Method method : methods) {
-
                         if (method.getName().equals(setterName)) {
                             Object value = rs.getObject(fieldName, field.getType());
                             method.invoke(classInstance, value);
                             break;
                         }
-
                     }
                 }
                 return classInstance;
@@ -162,12 +196,24 @@ public class JdbcTemplate extends PostgresDriver {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new PostgresDatabaseConnectionError(e.getMessage());
+        } finally {
+            try {
+                if (stmt != null)
+                    stmt.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public <T> List<T> queryForSingleColumnList(String sqlQuery, Class<T> elementType) {
+        Connection conn = null;
+        java.sql.Statement stmt = null;
         try {
-            java.sql.Statement stmt = this.createStatement();
+            conn = this.createConnection();
+            stmt = this.createStatement(conn);
             ResultSet rs = stmt.executeQuery(sqlQuery);
             ResultSetMetaData rsmd = rs.getMetaData();
 
@@ -177,21 +223,31 @@ public class JdbcTemplate extends PostgresDriver {
             java.util.ArrayList<T> list = new java.util.ArrayList<>();
             while (rs.next()) {
                 list.add(rs.getObject(1, elementType));
-
             }
             return list;
 
         } catch (SQLException e) {
             e.printStackTrace();
             throw new PostgresDatabaseConnectionError(e.getMessage());
+        } finally {
+            try {
+                if (stmt != null)
+                    stmt.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public Integer updateOne(String sqlUpdate) throws PostgresDatabaseConnectionError {
+        Connection conn = null;
+        java.sql.Statement stmt = null;
         try {
-            Connection conn = this.createConnection();
+            conn = this.createConnection();
             conn.setAutoCommit(false);
-            java.sql.Statement stmt = this.createStatement(conn);
+            stmt = this.createStatement(conn);
             var result = stmt.executeUpdate(sqlUpdate);
             if (result != 1) {
                 conn.rollback();
@@ -202,15 +258,33 @@ public class JdbcTemplate extends PostgresDriver {
             return result;
         } catch (SQLException e) {
             e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
             throw new PostgresDatabaseConnectionError(e.getMessage());
+        } finally {
+            try {
+                if (stmt != null)
+                    stmt.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public Integer updateOne(String sqlUpdate, Object... params) throws PostgresDatabaseConnectionError {
+        Connection conn = null;
+        java.sql.PreparedStatement stmt = null;
         try {
-            Connection conn = this.createConnection();
+            conn = this.createConnection();
             conn.setAutoCommit(false);
-            java.sql.PreparedStatement stmt = this.getPreparedStatement(sqlUpdate, conn);
+            stmt = this.getPreparedStatement(sqlUpdate, conn);
             for (int i = 0; i < params.length; i++) {
                 stmt.setObject(i + 1, params[i]);
             }
@@ -224,7 +298,23 @@ public class JdbcTemplate extends PostgresDriver {
             return result;
         } catch (SQLException e) {
             e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
             throw new PostgresDatabaseConnectionError(e.getMessage());
+        } finally {
+            try {
+                if (stmt != null)
+                    stmt.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 

@@ -43,16 +43,6 @@ abstract public class PostgresDriver {
         return this.createConnection(null);
     }
 
-    public Statement createStatement() {
-        try {
-            Connection conn = this.createConnection();
-            return conn.createStatement();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new PostgresDatabaseConnectionError(e.getMessage());
-        }
-    }
-
     public Statement createStatement(Connection conn) {
         try {
             return conn.createStatement();
@@ -69,11 +59,6 @@ abstract public class PostgresDriver {
             e.printStackTrace();
             throw new PostgresDatabaseConnectionError(e.getMessage());
         }
-    }
-
-    public PreparedStatement getPreparedStatement(String sqlQuery) {
-        Connection conn = this.createConnection();
-        return this.getPreparedStatement(sqlQuery, conn);
     }
 
 }

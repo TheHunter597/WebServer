@@ -97,14 +97,18 @@ public class RequestParser {
 
     public static HashMap<String, String> requestParametersExtractor(String request, HashMap<String, String> coreData) {
         HashMap<String, String> parametersMap = new HashMap<>();
+
         if (request.length() == 0) {
             return parametersMap;
         }
+
         String path = coreData.get("path");
         if (!path.contains("?")) {
             return parametersMap;
         }
+
         ArrayList<String> params = new ArrayList<String>(List.of(path.split("\\?")));
+
         params.remove(0);
         try {
             var result = (new ArrayList<String>(List.of(
