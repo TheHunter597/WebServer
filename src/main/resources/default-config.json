@@ -1,0 +1,10 @@
+{
+  "port": "8001",
+  "ApplicationName": "Test",
+  "baseDir": "www",
+  "jdbcPostgresPort": "5432",
+  "jdbcPostgresHost": "localhost",
+  "jdbcPostgresDatabase": "mydb",
+  "jdbcPostgresUser": "admin",
+  "jdbcPostgresPassword": "secret"
+}

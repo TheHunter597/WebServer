@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Web Server</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="badge">Java HTTP · Docs</div>
+        <h1>Test Web Server</h1>
+        <p>How to use the Request/Response flow, handlers, and JDBC access.</p>
+        <p>
+          Documentation text was generated with AI for clarity and structure.
+          The Java HTTP server implementation, architecture, and code are fully
+          written by me.
+        </p>
+        <div class="chips">
+          <div class="chip">Request</div>
+          <div class="chip">Response</div>
+          <div class="chip">RequestHandler</div>
+          <div class="chip">RequestHandlerDB</div>
+          <div class="chip">JdbcTemplate</div>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Overview</h2>
+            <span class="pill success">Ready</span>
+          </div>
+          <div class="grid two">
+            <div class="card">
+              <div class="card-title">Flow</div>
+              <div class="card-value">Request → Handler → Response</div>
+              <p class="card-note">
+                Requests are parsed into Request objects, handled via
+                RequestHandler or RequestHandlerDB, and written back through
+                Response.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-title">Data</div>
+              <div class="card-value">PostgreSQL</div>
+              <p class="card-note">
+                JdbcTemplate runs SQL against the config-defined database (host,
+                port, db, user, password).<br />
+                (Password must not set as a plain text that is huge security
+                risk but the webserver is not for production use. )
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Core Types</h2>
+            <span class="pill neutral">API</span>
+          </div>
+          <div class="grid stats">
+            <article class="card">
+              <div class="card-title">Request</div>
+              <div class="card-value">Inbound HTTP</div>
+              <p class="card-note">
+                Provides method, path, headers, parameters, and body access.
+              </p>
+            </article>
+            <article class="card">
+              <div class="card-title">Response</div>
+              <div class="card-value">Outbound HTTP</div>
+              <p class="card-note">
+                Sets status, headers, and body content for clients.
+              </p>
+            </article>
+            <article class="card">
+              <div class="card-title">JdbcTemplate</div>
+              <div class="card-value">SQL helper</div>
+              <p class="card-note">
+                Executes queries and maps ResultSet rows through
+                ResultSetExtractor.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Handlers</h2>
+            <span class="pill neutral">Functions</span>
+          </div>
+          <div class="grid two">
+            <div class="card card-compact">
+              <div class="card-title">RequestHandler</div>
+              <p class="card-note">
+                Signature: Response apply(Request req, Response res). Use for
+                static or logic-only routes.
+              </p>
+            </div>
+            <div class="card card-compact">
+              <div class="card-title">RequestHandlerDB</div>
+              <p class="card-note">
+                Extends RequestHandler for database-backed routes. Uses
+                JdbcTemplate to query or update Postgres.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Request</h2>
+            <span class="pill neutral">Read</span>
+          </div>
+          <div class="api-grid">
+            <div class="api">
+              <div class="api-name">req.getMethod()</div>
+              <p>Returns the HTTP verb (GET, POST, etc.).</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getPath()</div>
+              <p>URL path portion after the host.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.httpType()</div>
+              <p>HTTP protocol version string.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getHeaders()</div>
+              <p>Map of header names to values.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getHeader(String key)</div>
+              <p>Lookup a single header by name.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getParams()</div>
+              <p>Query or body parameters as key/value pairs.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getRouteParameters()</div>
+              <p>Values captured from dynamic route segments.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getCookies()</div>
+              <p>Cookies parsed from the incoming request.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getBody()</div>
+              <p>Raw request payload.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getBodyAsJson()</div>
+              <p>Parses the body into a JsonNode.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getBodyAsJson(Class&lt;T&gt; type)</div>
+              <p>
+                Deserializes the body to a concrete type; null if missing
+                required fields.
+              </p>
+            </div>
+            <div class="api">
+              <div class="api-name">req.getFile()</div>
+              <p>
+                Multipart form-data file map when Content-Type is
+                multipart/form-data.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Response</h2>
+            <span class="pill neutral">Write</span>
+          </div>
+          <div class="api-grid">
+            <div class="api">
+              <div class="api-name">res.setStatusCode(int code)</div>
+              <p>Sets HTTP status.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">res.setContentType(String type)</div>
+              <p>Defines the response mime type.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">res.setBody(String body)</div>
+              <p>Assigns the response body.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">res.json(Object data)</div>
+              <p>Serializes an object as JSON and sets content-type.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">res.httpFileResponse(String path)</div>
+              <p>
+                Reads a static file from the baseDir and sets body and
+                content-type.
+              </p>
+            </div>
+            <div class="api">
+              <div class="api-name">
+                res.setHeader(String key, String value)
+              </div>
+              <p>Adds or replaces a header.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">res.addCookie(Cookie cookie)</div>
+              <p>Queues a Set-Cookie header for the response.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">res.getCookie(String name)</div>
+              <p>Reads an attached cookie object by name.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">res.formulateResponseHeaders()</div>
+              <p>
+                Builds the HTTP response header string including cookies and
+                extras.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>JdbcTemplate</h2>
+            <span class="pill neutral">Database</span>
+          </div>
+          <div class="api-grid">
+            <div class="api">
+              <div class="api-name">
+                query(String sql, ResultSetExtractor&lt;T&gt; rse)
+              </div>
+              <p>Runs a SELECT and maps rows via the extractor.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">query(String sql)</div>
+              <p>Returns a ResultSet for manual iteration.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">query(String sql, Connection conn)</div>
+              <p>Executes within a provided connection.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">
+                query(PreparedStatement ps, ResultSetExtractor&lt;T&gt; rse)
+              </div>
+              <p>Uses a prepared statement to map rows.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">
+                query(PreparedStatement ps, ResultSetExtractor&lt;T&gt; rse,
+                Object... params)
+              </div>
+              <p>Binds parameters then extracts rows.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">
+                queryForSingleObject(String sql, ResultSetExtractor&lt;T&gt;
+                rse)
+              </div>
+              <p>Returns the first row mapped, or null if none.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">
+                queryForSingleColumnList(String sql, Class&lt;T&gt; type)
+              </div>
+              <p>Returns a list from a single-column result set.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">updateOne(String sql)</div>
+              <p>Executes an update expecting one row; rolls back otherwise.</p>
+            </div>
+            <div class="api">
+              <div class="api-name">
+                updateOne(String sql, Object... params)
+              </div>
+              <p>Prepared update expecting exactly one row.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Examples</h2>
+            <span class="pill neutral">Usage</span>
+          </div>
+          <div class="grid two">
+            <div class="card code-card">
+              <div class="card-title">Static response</div>
+              <pre><code>RequestHandler ping = (req, res) -&gt; {
+  res.setStatusCode(200);
+  res.setContentType("text/plain");
+  res.setBody("pong");
+  return res;
+};</code></pre>
+            </div>
+            <div class="card code-card">
+              <div class="card-title">DB-backed handler</div>
+              <pre><code>RequestHandlerDB listUsers = (req, res, jdbc) -&gt; {
+  String sql = "select id, email from users order by id";
+  String json = jdbc.query(sql, rs -&gt; {
+    var out = new StringBuilder("[");
+    boolean first = true;
+    while (rs.next()) {
+      if (!first) out.append(",");
+      out.append("{\"id\":")
+         .append(rs.getInt("id"))
+         .append(",\"email\":\"")
+         .append(rs.getString("email"))
+         .append("\"}");
+      first = false;
+    }
+    out.append("]");
+    return out.toString();
+  });
+  res.json(json);
+  return res;
+};</code></pre>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
