@@ -39,21 +39,6 @@ public class App {
             return res;
 
         });
-
-        server.addRoute("GET", "/file", (req, res) -> {
-            res.setMethod("POST");
-            res.setStatusCode(200);
-
-            try {
-                res.httpFileResponse("index.html");
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            return res;
-
-        });
-
         server.get("/json", (req, res) -> {
             HashMap<String, Object> map = new HashMap<>();
             map.put("name", "Mohamed");
