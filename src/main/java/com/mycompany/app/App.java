@@ -28,7 +28,7 @@ class RequestUser {
 public class App {
     public static void main(String[] args) throws IOException {
         Server server = new Server(3);
-
+        server.enableDatabaseConnection();
         server.addRoute("GET", "/", (req, res) -> {
             res.setStatusCode(200);
             try {
@@ -97,36 +97,50 @@ public class App {
             return res;
         });
 
-        server.get("/users", (req, res, db) -> {
-            @Setter
-            @Getter
-            class User {
-                private int id;
-                private String username;
-                private String password;
+        // server.get("/users", (req, res, db) -> {
+        // @Setter
+        // @Getter
+        // class User {
+        // private int id;
+        // private String username;
+        // private String password;
 
-            }
-            var requestData = req.getBodyAsJson(RequestUser.class);
-            if (requestData == null) {
-                res.setStatusCode(400);
-                res.json("Invalid JSON body");
-                return res;
-            }
+        // }
+        // var requestData = req.getBodyAsJson(RequestUser.class);
+        // if (requestData == null) {
+        // res.setStatusCode(400);
+        // res.json("Invalid JSON body");
+        // return res;
+        // }
 
-            var result = db.updateOne("""
-                        UPDATE CUSTOM_USERS
-                        SET USERNAME = ?
-                        WHERE ID = ?
-                    """, requestData.username, requestData.id);
-            res.setStatusCode(200);
-            Cookie cookie = new Cookie("session_id", "abc123xyz");
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            res.addCookie(cookie);
-            res.json(result);
+        // var result = db.updateOne("""
+        // UPDATE CUSTOM_USERS
+        // SET USERNAME = ?
+        // WHERE ID = ?
+        // """, requestData.username, requestData.id);
+        // res.setStatusCode(200);
+        // Cookie cookie = new Cookie("session_id", "abc123xyz");
+        // cookie.setHttpOnly(true);
+        // cookie.setPath("/");
+        // res.addCookie(cookie);
+        // res.json(result);
+        // return res;
+        // });
+        server.get("/data", (req, res, db) -> {
+            var users = db.query("SELECT * FROM CUSTOM_USERS", rs -> {
+                java.util.ArrayList<HashMap<String, Object>> list = new java.util.ArrayList<>();
+                while (rs.next()) {
+                    HashMap<String, Object> user = new HashMap<>();
+                    user.put("id", rs.getInt("id"));
+                    user.put("username", rs.getString("username"));
+                    user.put("password", rs.getString("password"));
+                    list.add(user);
+                }
+                return list;
+            });
+            res.json(users);
             return res;
         });
-
         server.start();
     }
 }

@@ -35,6 +35,15 @@ public class Route {
         this();
         this.method = method;
         this.route = route;
+        if (!allowedMethods.contains(method)) {
+            throw new HttpServerError(
+                    String.format("Allowed methods are %s you, your provided method %s is not supported",
+                            String.join(",", allowedMethods), method));
+        }
+        if (Server.jdbcTemplate == null) {
+            throw new HttpServerError(
+                    "Database connection is not enabled. Please enable it before using DB routes. use server.enableDatabaseConnection()");
+        }
         this.dbHandler = handler;
     }
 
@@ -66,6 +75,10 @@ public class Route {
         }
         Response result;
         if (this.dbHandler != null) {
+            if (Server.jdbcTemplate == null) {
+                throw new HttpServerError(
+                        "Database connection is not enabled. Please enable it before using DB routes. use server.enableDatabaseConnection()");
+            }
             result = this.dbHandler.apply(request, response, Server.jdbcTemplate);
         } else {
             result = this.handler.apply(request, response);

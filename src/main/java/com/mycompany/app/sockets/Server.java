@@ -28,7 +28,6 @@ public class Server {
         this.executor = this.executor != null ? this.executor : Executors.newCachedThreadPool();
         this.manager = this.manager != null ? this.manager : ConfigurationManager.getInstance();
         this.driver = new HttpDriver();
-        Server.jdbcTemplate = new JdbcTemplate(this.manager);
     }
 
     public Server(Integer ThreadsNumber) {
@@ -36,10 +35,21 @@ public class Server {
         this.executor = Executors.newFixedThreadPool(ThreadsNumber);
     }
 
-    public Server(ConfigurationManager manager, Integer ThreadsNumber) {
+    public Server(Integer ThreadsNumber, ConfigurationManager manager) {
         this();
+        this.manager = manager;
         this.executor = Executors.newFixedThreadPool(ThreadsNumber);
-        Server.jdbcTemplate = new JdbcTemplate(this.manager);
+    }
+
+    public void enableDatabaseConnection() {
+        try {
+            Server.jdbcTemplate = new JdbcTemplate(this.manager);
+            System.err.println("Database connection enabled successfully");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpServerError("Failed to enable database connection: " + e.getMessage());
+        }
     }
 
     public void start() throws IOException {

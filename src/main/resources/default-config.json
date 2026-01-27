@@ -6,5 +6,5 @@
   "jdbcPostgresHost": "localhost",
   "jdbcPostgresDatabase": "mydb",
   "jdbcPostgresUser": "admin",
-  "jdbcPostgresPassword": "secret"
+  "jdbcPostgresPassword": "secrets"
 }
