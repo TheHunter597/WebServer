@@ -33,10 +33,19 @@ public class HttpDriver {
                     .findFirst()
                     .get();
         } catch (NoSuchElementException e) {
+            System.err.println("Route not found: " + route.getMethod() + " " + route.getRoute());
             foundRoute = new Route(route.getMethod(), route.getRoute(), (req, res) -> {
-                if (route.getRoute().split(".").length > 1) {
-                    // if we are returning a file dont return the notfound.html
-                    // not like I should be returning the notfound file here anyway
+
+                if (route.getRoute().split(".").length < 1) {
+                    // if route is not found we are going to return the notfound file
+                    // this would be set to the response getting back to the browser
+
+                    // if the browswer is asking for lets say .css or .js file
+                    // first the response would have the notfound.html as the returned type
+                    // then if you go to executeRoute method in the route you would find that if
+                    // a file is returned the return content would be overwritten with the required
+                    // file, not the notfound.html file
+
                     res.setStatusCode(404);
                     try {
                         res.httpFileResponse("/notfound.html");
@@ -44,6 +53,7 @@ public class HttpDriver {
                         e1.printStackTrace();
                     }
                 }
+
                 return res;
             });
         }

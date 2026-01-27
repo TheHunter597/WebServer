@@ -29,117 +29,118 @@ public class App {
     public static void main(String[] args) throws IOException {
         Server server = new Server(3);
         server.enableDatabaseConnection();
-        server.addRoute("GET", "/", (req, res) -> {
-            res.setStatusCode(200);
-            try {
-                res.httpFileResponse("/index.html");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return res;
-
-        });
-        server.get("/json", (req, res) -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("name", "Mohamed");
-            res.json(map);
-            return res;
-        });
-
-        server.get("/json/?id=str", (req, res) -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("name", "Mohamed");
-            res.json(map);
-            return res;
-        });
-        server.get("/json/?id=str/?age=int", (req, res) -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("name", "Mohamed");
-            res.json(map);
-            return res;
-        });
-        server.post("/data", (req, res) -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("name", "Mohamed");
-            res.json(map);
-            return res;
-        });
-        server.post("/upload", (req, res) -> {
-            res.setHeader("Authorization", "test");
-            return res;
-        });
-        server.post("/upload/:data", (req, res) -> {
-            res.setHeader("Authorization", "test");
-            return res;
-        });
-        server.post("/upload/:data/:mango", (req, res) -> {
-            res.setHeader("Authorization", "test");
-            return res;
-        });
-        server.use("/", (req, res) -> {
-            System.err.println("I ran");
-            res.setStatusCode(300);
-        });
-
-        server.post("/file", (req, res) -> {
-            res.setHeader("Access-Control-Allow-Origin", "*");
-            res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-            res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-            try {
-                FileWriter writer = new FileWriter(req.getFile().get("name"), true);
-                writer.write(req.getFile().get("chunk"));
-                writer.close();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            res.setStatusCode(200);
-            return res;
-        });
-
-        // server.get("/users", (req, res, db) -> {
-        // @Setter
-        // @Getter
-        // class User {
-        // private int id;
-        // private String username;
-        // private String password;
-
-        // }
-        // var requestData = req.getBodyAsJson(RequestUser.class);
-        // if (requestData == null) {
-        // res.setStatusCode(400);
-        // res.json("Invalid JSON body");
-        // return res;
-        // }
-
-        // var result = db.updateOne("""
-        // UPDATE CUSTOM_USERS
-        // SET USERNAME = ?
-        // WHERE ID = ?
-        // """, requestData.username, requestData.id);
+        // server.addRoute("GET", "/", (req, res) -> {
         // res.setStatusCode(200);
-        // Cookie cookie = new Cookie("session_id", "abc123xyz");
-        // cookie.setHttpOnly(true);
-        // cookie.setPath("/");
-        // res.addCookie(cookie);
-        // res.json(result);
+        // try {
+        // res.httpFileResponse("/index.html");
+        // } catch (IOException e) {
+        // e.printStackTrace();
+        // }
+        // return res;
+
+        // });
+        // server.get("/json", (req, res) -> {
+        // HashMap<String, Object> map = new HashMap<>();
+        // map.put("name", "Mohamed");
+        // res.json(map);
         // return res;
         // });
-        server.get("/data", (req, res, db) -> {
-            var users = db.query("SELECT * FROM CUSTOM_USERS", rs -> {
-                java.util.ArrayList<HashMap<String, Object>> list = new java.util.ArrayList<>();
-                while (rs.next()) {
-                    HashMap<String, Object> user = new HashMap<>();
-                    user.put("id", rs.getInt("id"));
-                    user.put("username", rs.getString("username"));
-                    user.put("password", rs.getString("password"));
-                    list.add(user);
+
+        // server.get("/json/?id=str", (req, res) -> {
+        // HashMap<String, Object> map = new HashMap<>();
+        // map.put("name", "Mohamed");
+        // res.json(map);
+        // return res;
+        // });
+        // server.get("/json/?id=str/?age=int", (req, res) -> {
+        // HashMap<String, Object> map = new HashMap<>();
+        // map.put("name", "Mohamed");
+        // res.json(map);
+        // return res;
+        // });
+        // server.post("/data", (req, res) -> {
+        // HashMap<String, Object> map = new HashMap<>();
+        // map.put("name", "Mohamed");
+        // res.json(map);
+        // return res;
+        // });
+        // server.post("/upload", (req, res) -> {
+        // res.setHeader("Authorization", "test");
+        // return res;
+        // });
+        // server.post("/upload/:data", (req, res) -> {
+        // res.setHeader("Authorization", "test");
+        // return res;
+        // });
+        // server.post("/upload/:data/:mango", (req, res) -> {
+        // res.setHeader("Authorization", "test");
+        // return res;
+        // });
+
+        // server.get("/users", (req, res, db) -> {
+        // try {
+        // var users = db.query(
+        // "SELECT id, username, password FROM CUSTOM_USERS",
+        // rs -> {
+        // var usersList = new java.util.ArrayList<User>();
+        // while (rs.next()) {
+        // User user = new User();
+        // user.setId(rs.getLong("id"));
+        // user.setUsername(rs.getString("username"));
+        // user.setPassword(rs.getString("password"));
+        // usersList.add(user);
+        // }
+        // return usersList;
+        // });
+        // res.setStatusCode(200);
+        // res.json(users);
+        // return res;
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // res.setStatusCode(500);
+        // HashMap<String, String> errorResponse = new HashMap<>();
+        // errorResponse.put("error", "Error retrieving users: " + e.getMessage());
+        // res.json(errorResponse);
+        // return res;
+        // }
+        // });
+
+        server.post("/users/update", (req, res, db) -> {
+            var requestData = req.getBodyAsJson(RequestUser.class);
+            if (requestData == null) {
+                res.setStatusCode(400);
+                res.json("Invalid JSON body");
+                return res;
+            }
+
+            try {
+                db.updateOne("""
+                        UPDATE CUSTOM_USERS
+                        SET USERNAME = ?
+                        WHERE ID = ?
+                        """, requestData.username, requestData.id);
+                var updatedUser = db.queryForSingleObject(
+                        "SELECT id, username, password FROM CUSTOM_USERS WHERE id = ?",
+                        User.class, requestData.id);
+                System.err.println("Updated user: " + updatedUser);
+                if (updatedUser == null) {
+                    res.setStatusCode(404);
+                    res.json("User not found after update");
+                    return res;
                 }
-                return list;
-            });
-            res.json(users);
-            return res;
+
+                res.setStatusCode(200);
+                res.json(updatedUser);
+                return res;
+            } catch (Exception e) {
+                e.printStackTrace();
+                res.setStatusCode(500);
+                HashMap<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Error retrieving updated user: " + e.getMessage());
+                res.json(errorResponse);
+                return res;
+            }
+
         });
         server.start();
     }
