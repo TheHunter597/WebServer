@@ -5,7 +5,11 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.function.BiFunction;
 
 import com.mycompany.app.Handlers.FileParser;
 
@@ -46,13 +50,7 @@ public class Request {
 
     public Request(InputStream stream) throws IOException {
         request = processBody(stream);
-        requestBody = RequestParser.requestBodyExtractor(request);
-        coreData = RequestParser.coreDataExtractor(this.request);
-        params = RequestParser.requestParametersExtractor(request, coreData);
-        headers = RequestParser.requestHeadersExtractor(request);
-        cookies = RequestParser.requestCookiesExtractor(this.headers);
-        routeParameters = RequestParser.requestRouteParametersExtractor(coreData);
-        this.contentType = RequestParser.parseContentTypeHeader(headers.get("Content-Type"));
+        Request.requestPropertiesAssigner(request, this);
         if (contentType != null && contentType.get("Content-Type").equals("multipart/form-data")) {
             File = FileParser.parseMultipartFormData(requestBody, contentType.get("boundary"));
         }
@@ -119,6 +117,35 @@ public class Request {
         }
 
         return sb.toString();
+    }
+
+    public static void requestPropertiesAssigner(String request, Request requestObject) {
+        var funcs = Request.requestModifyingFunctions();
+
+        var requestAndRequestObject = new HashMap<String, Object>();
+        requestAndRequestObject.put("request", request);
+        requestAndRequestObject.put("requestObject", requestObject);
+
+        for (BiFunction<String, Request, HashMap<String, Object>> func : funcs) {
+            requestAndRequestObject = func.apply((String) requestAndRequestObject.get("request"),
+                    (Request) requestAndRequestObject.get("requestObject"));
+        }
+        request = requestAndRequestObject.get("request").toString();
+        requestObject = (Request) requestAndRequestObject.get("requestObject");
+    }
+
+    public static List<BiFunction<String, Request, HashMap<String, Object>>> requestModifyingFunctions() {
+
+        List<BiFunction<String, Request, HashMap<String, Object>>> funcs = new ArrayList<>(Arrays.asList(
+                RequestParser::requestBodyExtractor,
+                RequestParser::coreDataExtractor,
+                RequestParser::requestParametersExtractor,
+                RequestParser::requestHeadersExtractor,
+                RequestParser::requestCookiesExtractor,
+                RequestParser::requestRouteParametersExtractor,
+                RequestParser::parseContentTypeHeader));
+
+        return funcs;
     }
 
 }

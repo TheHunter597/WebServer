@@ -1,10 +1,8 @@
 package com.mycompany.app;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
-import com.mycompany.app.Handlers.Cookie;
 import com.mycompany.app.Request.RequestParmaterRequired;
 import com.mycompany.app.sockets.Server;
 
@@ -12,26 +10,40 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-@ToString
 @Getter
 @Setter
-class RequestUser {
-    @RequestParmaterRequired
-    public String username;
-    @RequestParmaterRequired
-    public Integer id;
+class CustomUsers {
+    private String username;
+    private String password;
+}
 
-    public RequestUser() {
+class RequestUser {
+    public String username;
+    public String password;
+
+    @Override
+    public String toString() {
+        return "RequestUser{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                '}';
     }
 }
 
 public class App {
     public static void main(String[] args) throws IOException {
 
-        Server server = new Server(3);
-        server.enableDatabaseConnection();
+        Server server = new Server.Builder().enableDatabase().withCachedThreadPool().build();
 
-        server.get("/", (req, res) -> {
+        server.get("/hello", (req, res) -> {
+            res.setHeader("Content-Type", "application/text");
+            res.setBody("Hello there");
+            return res;
+        });
+
+        server.get("/", (req, res) ->
+
+        {
             res.setStatusCode(200);
             try {
                 res.httpFileResponse("/index.html");
@@ -40,42 +52,6 @@ public class App {
             }
             return res;
 
-        });
-
-        server.post("/users/update", (req, res, db) -> {
-            var requestData = req.getBodyAsJson(RequestUser.class);
-            if (requestData == null) {
-                res.setStatusCode(400);
-                res.json("Invalid JSON body");
-                return res;
-            }
-            try {
-                db.updateOne("""
-                        UPDATE CUSTOM_USERS
-                        SET USERNAME = ?
-                        WHERE ID = ?
-                        """, requestData.username, requestData.id);
-                var updatedUser = db.queryForSingleObject(
-                        "SELECT id, username, password FROM CUSTOM_USERS WHERE id = ?",
-                        User.class, requestData.id);
-                System.err.println("Updated user: " + updatedUser);
-                if (updatedUser == null) {
-                    res.setStatusCode(404);
-                    res.json("User not found after update");
-                    return res;
-                }
-
-                res.setStatusCode(200);
-                res.json(updatedUser);
-                return res;
-            } catch (Exception e) {
-                e.printStackTrace();
-                res.setStatusCode(500);
-                HashMap<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Error retrieving updated user: " + e.getMessage());
-                res.json(errorResponse);
-                return res;
-            }
         });
 
         server.get("/json", (req, res) -> {
@@ -91,7 +67,7 @@ public class App {
             res.json(map);
             return res;
         });
-        server.get("/json/?id=str/?age=int", (req, res) -> {
+        server.get("/json/?id=str&age=int", (req, res) -> {
             HashMap<String, Object> map = new HashMap<>();
             map.put("name", "Mohamed");
             res.json(map);
@@ -109,6 +85,7 @@ public class App {
         });
         server.post("/upload/:data", (req, res) -> {
             res.setHeader("Authorization", "test");
+            System.err.println(req.getRouteParameters());
             return res;
         });
         server.post("/upload/:data/:mango", (req, res) -> {

@@ -3,7 +3,6 @@ package com.mycompany.app.sockets;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,35 +16,72 @@ import com.mycompany.app.Response.HttpResponseText;
 import com.mycompany.app.Response.Route;
 
 public class Server {
-    ExecutorService executor;
-    ConfigurationManager manager;
-    HttpDriver driver;
+    private ExecutorService executor;
+    private ConfigurationManager manager;
+    private HttpDriver driver;
     public static JdbcTemplate jdbcTemplate;
-
     public static HashMap<String, ArrayList<Middleware>> middlewares = new HashMap<>();
 
-    public Server() {
-        this.executor = this.executor != null ? this.executor : Executors.newCachedThreadPool();
-        this.manager = this.manager != null ? this.manager : ConfigurationManager.getInstance();
-        this.driver = new HttpDriver();
+    private Server(Builder builder) {
+        this.executor = builder.executor;
+        this.manager = builder.manager;
+        this.driver = builder.driver != null ? builder.driver : new HttpDriver();
     }
 
-    public Server(Integer ThreadsNumber) {
-        this();
-        this.executor = Executors.newFixedThreadPool(ThreadsNumber);
+    public static class Builder {
+        private ExecutorService executor = Executors.newCachedThreadPool();
+        private ConfigurationManager manager = ConfigurationManager.getInstance();
+        private HttpDriver driver;
+        private boolean enableDatabase = false;
+
+        public Builder() {
+        }
+
+        public Builder withThreads(int threadCount) {
+            this.executor = Executors.newFixedThreadPool(threadCount);
+            return this;
+        }
+
+        public Builder withCachedThreadPool() {
+            this.executor = Executors.newCachedThreadPool();
+            return this;
+        }
+
+        public Builder withExecutor(ExecutorService executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        public Builder withConfiguration(ConfigurationManager manager) {
+            this.manager = manager;
+            return this;
+        }
+
+        public Builder withDriver(HttpDriver driver) {
+            this.driver = driver;
+            return this;
+        }
+
+        public Builder enableDatabase() {
+            this.enableDatabase = true;
+            return this;
+        }
+
+        public Server build() {
+            Server server = new Server(this);
+
+            if (enableDatabase) {
+                server.enableDatabaseConnection();
+            }
+
+            return server;
+        }
     }
 
-    public Server(Integer ThreadsNumber, ConfigurationManager manager) {
-        this();
-        this.manager = manager;
-        this.executor = Executors.newFixedThreadPool(ThreadsNumber);
-    }
-
-    public void enableDatabaseConnection() {
+    private void enableDatabaseConnection() {
         try {
             Server.jdbcTemplate = new JdbcTemplate(this.manager);
             System.err.println("Database connection enabled successfully");
-
         } catch (Exception e) {
             e.printStackTrace();
             throw new HttpServerError("Failed to enable database connection: " + e.getMessage());
@@ -59,7 +95,6 @@ public class Server {
         MainServerThread mainThread = new MainServerThread(manager, this.executor, this.driver);
         HttpResponseText.loadHttpResponseText();
         mainThread.start();
-
     }
 
     public void addRoute(String method, String route, RequestHandler handler) {
@@ -86,6 +121,10 @@ public class Server {
         this.driver.addNewRoute(new Route("POST", route, handler));
     }
 
+    public void put(String route, RequestHandlerDB handler) {
+        this.driver.addNewRoute(new Route("PUT", route, handler));
+    }
+
     public void use(String path, Middleware middleware) {
         middlewares.compute(path, (key, value) -> {
             if (value == null) {
@@ -94,6 +133,5 @@ public class Server {
             value.add(middleware);
             return value;
         });
-
     }
 }

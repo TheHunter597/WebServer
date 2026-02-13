@@ -4,7 +4,7 @@
   "baseDir": "www",
   "jdbcPostgresPort": "5432",
   "jdbcPostgresHost": "localhost",
-  "jdbcPostgresDatabase": "mydb",
+  "jdbcPostgresDatabase": "postgres",
   "jdbcPostgresUser": "admin",
   "jdbcPostgresPassword": "secret"
 }

@@ -28,36 +28,33 @@ public class Route {
         this.allowedMethods = new ArrayList<>();
         allowedMethods.add("GET");
         allowedMethods.add("POST");
+        allowedMethods.add("PUT");
         allowedMethods.add("OPTIONS");
     }
 
-    public Route(String method, String route, RequestHandlerDB handler) {
+    public Route(String method, String route) {
         this();
-        this.method = method;
-        this.route = route;
         if (!allowedMethods.contains(method)) {
             throw new HttpServerError(
                     String.format("Allowed methods are %s you, your provided method %s is not supported",
                             String.join(",", allowedMethods), method));
         }
+        this.method = method;
+        this.route = route;
+    }
+
+    public Route(String method, String route, RequestHandler handler) {
+        this(method, route);
+        this.handler = handler;
+    }
+
+    public Route(String method, String route, RequestHandlerDB handler) {
+        this(method, route);
         if (Server.jdbcTemplate == null) {
             throw new HttpServerError(
                     "Database connection is not enabled. Please enable it before using DB routes. use server.enableDatabaseConnection()");
         }
         this.dbHandler = handler;
-    }
-
-    public Route(String method, String route, RequestHandler handler) {
-        this();
-        if (!allowedMethods.contains(method)) {
-            throw new HttpServerError(
-                    String.format("Allowed methods are %s you, your provided method %s is not supported",
-                            String.join(",", allowedMethods), method));
-        }
-        this.method = method;
-        this.route = route;
-        this.handler = handler;
-
     }
 
     public void executeRoute(OutputStream out, Request request) throws IOException {
@@ -85,20 +82,6 @@ public class Route {
         out.write(responseHeaders.getBytes(StandardCharsets.UTF_8));
         out.write(body);
         out.flush();
-    }
-
-    public Route(String method, String route) {
-        this.allowedMethods = new ArrayList<>();
-        allowedMethods.add("GET");
-        allowedMethods.add("POST");
-        allowedMethods.add("OPTIONS");
-        if (!allowedMethods.contains(method)) {
-            throw new HttpServerError(
-                    String.format("Allowed methods are %s you, your provided method %s is not supported",
-                            String.join(",", allowedMethods), method));
-        }
-        this.method = method;
-        this.route = route;
     }
 
     @Override
@@ -132,6 +115,8 @@ public class Route {
                 map.put(kv[0], kv[1]);
             }
         }
+        System.err.println(
+                "Parsed query parameters: " + map + " from query string: " + query);
         return map;
     }
 
@@ -151,39 +136,58 @@ public class Route {
         if (!this.method.equals(other.method))
             return false;
 
+        System.err.println("Comparing routes: " + this.route + " and " + other.route);
+
         String thisPath = pathOnly(this.route);
         String otherPath = pathOnly(other.route);
-
         String[] thisParts = thisPath.split("/");
         String[] otherParts = otherPath.split("/");
 
+        // Check path lengths match
         if (thisParts.length != otherParts.length)
             return false;
 
+        // Check path parts match
         for (int i = 0; i < thisParts.length; i++) {
             String patternPart = thisParts[i];
             String actualPart = otherParts[i];
 
             if (patternPart.startsWith(":")) {
-                continue;
+                continue; // Dynamic segment
             } else if (!patternPart.equals(actualPart)) {
                 return false;
             }
         }
 
+        // Parse query parameters
         Map<String, String> thisParams = parseQuery(queryOnly(this.route));
         Map<String, String> otherParams = parseQuery(queryOnly(other.route));
 
+        // IMPORTANT: If the number of query params differs, routes don't match
+        // This ensures /json doesn't match /json?id=test
+        if (thisParams.size() != otherParams.size()) {
+            System.err.println("Query param count mismatch: " +
+                    thisParams.size() + " vs " + otherParams.size());
+            return false;
+        }
+
+        // Check that ALL pattern parameters exist in the request and match types
         for (var entry : thisParams.entrySet()) {
             String key = entry.getKey();
             String expectedType = entry.getValue();
 
-            if (!otherParams.containsKey(key))
+            if (!otherParams.containsKey(key)) {
+                System.err.println("Missing required query parameter: " + key);
                 return false;
+            }
 
             String actualValue = otherParams.get(key);
-            if (!matchesType(expectedType, actualValue))
+            if (!matchesType(expectedType, actualValue)) {
+                System.err.println("Type mismatch for parameter " + key +
+                        ": expected " + expectedType +
+                        ", got " + actualValue);
                 return false;
+            }
         }
 
         return true;

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -32,6 +33,21 @@ public class Response {
     private String body = "";
 
     private HashMap<String, String> responseHeaders = new HashMap<String, String>();
+
+    public static final Map<String, String> MIME_TYPES;
+
+    static {
+        Map<String, String> map = new HashMap<>();
+        map.put("html", "text/html");
+        map.put("css", "text/css");
+        map.put("js", "application/javascript");
+        map.put("png", "image/png");
+        map.put("jpg", "image/jpeg");
+        map.put("jpeg", "image/jpeg");
+        map.put("gif", "image/gif");
+
+        MIME_TYPES = Collections.unmodifiableMap(map);
+    }
 
     public Response() {
         this.method = "POST";
@@ -63,18 +79,10 @@ public class Response {
     }
 
     public void httpFileResponse(String route) throws IOException {
-        Map<String, String> mimeTypes = new HashMap<>();
-        mimeTypes.put("html", "text/html");
-        mimeTypes.put("css", "text/css");
-        mimeTypes.put("js", "application/javascript");
-        mimeTypes.put("png", "image/png");
-        mimeTypes.put("jpg", "image/jpeg");
-        mimeTypes.put("jpeg", "image/jpeg");
-        mimeTypes.put("gif", "image/gif");
 
         int dot = route.lastIndexOf('.');
 
-        this.setContentType(mimeTypes.getOrDefault(route.substring(dot + 1), "application/octet-stream"));
+        this.setContentType(MIME_TYPES.getOrDefault(route.substring(dot + 1), "application/octet-stream"));
 
         String baseDir = ConfigurationManager.getInstance().getConfig().getBaseDir();
         File file = new File(baseDir + route).getCanonicalFile();

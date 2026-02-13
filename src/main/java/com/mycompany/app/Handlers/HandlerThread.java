@@ -22,7 +22,7 @@ public class HandlerThread implements Runnable {
             Request bodyProcessor = new Request(socket.getInputStream());
             Thread.sleep(200);
             if (bodyProcessor.getRequest().length() == 0 || bodyProcessor.getMethod().equals("OPTIONS")) {
-                // I am bored so just made it return this untill I implement proper OPTIONS
+                // just made it return this untill I implement proper OPTIONS
                 // handling
                 String headers = "HTTP/1.1 204 No Content\r\n" +
                         "Access-Control-Allow-Origin: *\r\n" +

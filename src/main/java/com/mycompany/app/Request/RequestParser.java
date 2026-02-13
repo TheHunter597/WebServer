@@ -9,12 +9,17 @@ import com.mycompany.app.Handlers.HttpDriver;
 import com.mycompany.app.Response.Route;
 
 public class RequestParser {
-    public static HashMap<String, String> requestCookiesExtractor(HashMap<String, String> headers) {
+    public static HashMap<String, Object> requestCookiesExtractor(String httpRequest, Request requestObject) {
 
         HashMap<String, String> cookies = new HashMap<>();
-        String cookieHeader = headers.get("Cookie");
+        String cookieHeader = requestObject.headers.get("Cookie");
+
+        HashMap<String, Object> requestAndRequestObject = new HashMap<>();
+        requestAndRequestObject.put("request", httpRequest);
+        requestAndRequestObject.put("requestObject", requestObject);
+
         if (cookieHeader == null) {
-            return cookies;
+            return requestAndRequestObject;
         }
 
         ArrayList<String> splitCookies = new ArrayList<>(List.of(cookieHeader.split(";")));
@@ -22,25 +27,32 @@ public class RequestParser {
             var result = splitCookies.get(index).split("=");
             cookies.put(result[0], result[1]);
         }
-        return cookies;
+        requestObject.cookies = cookies;
+
+        return requestAndRequestObject;
     }
 
-    public static HashMap<String, String> requestRouteParametersExtractor(
-            HashMap<String, String> coreData) {
+    public static HashMap<String, Object> requestRouteParametersExtractor(
+            String httpRequest, Request requestObject) {
 
         HashMap<String, String> params = new HashMap<>();
 
         ArrayList<Route> currentThreadRoutes = HttpDriver.threadRoutes;
         ArrayList<Route> paramitraizedRoutes = new ArrayList<>();
+
+        HashMap<String, Object> requestAndRequestObject = new HashMap<>();
+        requestAndRequestObject.put("request", httpRequest);
+        requestAndRequestObject.put("requestObject", requestObject);
+
         for (Route route : currentThreadRoutes) {
             if (!route.getRoute().contains(":")) {
                 continue;
             }
             paramitraizedRoutes.add(route);
         }
-        String sentRoute = coreData.get("path");
+        String sentRoute = requestObject.coreData.get("path");
         if (sentRoute == null) {
-            return params;
+            return requestAndRequestObject;
         }
         for (Route route : paramitraizedRoutes) {
             String[] routeBaseUrl = route.getRoute().split("/");
@@ -66,14 +78,15 @@ public class RequestParser {
         for (Map.Entry<String, String> entry : params.entrySet()) {
             sanitizedParams.put(entry.getKey().substring(1, entry.getKey().length()), entry.getValue());
         }
+        requestObject.routeParameters = sanitizedParams;
 
-        return sanitizedParams;
+        return requestAndRequestObject;
     }
 
-    public static HashMap<String, String> requestHeadersExtractor(String request) {
+    public static HashMap<String, Object> requestHeadersExtractor(String httpRequest, Request requestObject) {
         HashMap<String, String> headers = new HashMap<>();
 
-        String[] lines = request.split("\r\n");
+        String[] lines = httpRequest.split("\r\n");
 
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i];
@@ -92,19 +105,27 @@ public class RequestParser {
 
             headers.put(key, value);
         }
-        return headers;
+        requestObject.headers = headers;
+        HashMap<String, Object> requestAndRequestObject = new HashMap<>();
+        requestAndRequestObject.put("request", httpRequest);
+        requestAndRequestObject.put("requestObject", requestObject);
+        return requestAndRequestObject;
     }
 
-    public static HashMap<String, String> requestParametersExtractor(String request, HashMap<String, String> coreData) {
+    public static HashMap<String, Object> requestParametersExtractor(String httpRequest, Request requestObject) {
         HashMap<String, String> parametersMap = new HashMap<>();
 
-        if (request.length() == 0) {
-            return parametersMap;
+        HashMap<String, Object> requestAndRequestObject = new HashMap<>();
+        requestAndRequestObject.put("request", httpRequest);
+        requestAndRequestObject.put("requestObject", requestObject);
+
+        if (httpRequest.length() == 0) {
+            return requestAndRequestObject;
         }
 
-        String path = coreData.get("path");
+        String path = requestObject.coreData.get("path");
         if (!path.contains("?")) {
-            return parametersMap;
+            return requestAndRequestObject;
         }
 
         ArrayList<String> params = new ArrayList<String>(List.of(path.split("\\?")));
@@ -138,12 +159,31 @@ public class RequestParser {
 
                 parametersMap.put(key, value);
             }
-            return parametersMap;
+            requestObject.params = parametersMap;
+            requestAndRequestObject.put("requestObject", requestObject);
+            return requestAndRequestObject;
         } catch (Exception e) {
             System.err.println(e);
-            return parametersMap;
+            return requestAndRequestObject;
         }
 
+    }
+
+    public static HashMap<String, Object> requestBodyExtractor(String httpRequest, Request requestObject) {
+        var bodyIndex = httpRequest.indexOf("\r\n\r\n");
+        String body = null;
+        if (bodyIndex != -1) {
+            body = httpRequest.substring(bodyIndex + 4, httpRequest.length());
+        } else {
+            body = "";
+        }
+        requestObject.requestBody = body;
+
+        HashMap<String, Object> requestAndRequestObject = new HashMap<>();
+        requestAndRequestObject.put("request", httpRequest);
+        requestAndRequestObject.put("requestObject", requestObject);
+
+        return requestAndRequestObject;
     }
 
     public static String requestBodyExtractor(String request) {
@@ -157,15 +197,20 @@ public class RequestParser {
         return body;
     }
 
-    public static HashMap<String, String> coreDataExtractor(String request) {
+    public static HashMap<String, Object> coreDataExtractor(String httpRequest, Request requestObject) {
         HashMap<String, String> headersMap = new HashMap<>();
-        if (request.length() == 0) {
-            return headersMap;
+        HashMap<String, Object> requestAndRequestObject = new HashMap<>();
+
+        requestAndRequestObject.put("request", httpRequest);
+        requestAndRequestObject.put("requestObject", requestObject);
+        requestObject.coreData = headersMap;
+
+        if (httpRequest.length() == 0) {
+            return requestAndRequestObject;
         }
 
-        var headersEnd = request.indexOf("\r\n\r\n");
-
-        var headers = request.substring(0, headersEnd);
+        var headersEnd = httpRequest.indexOf("\r\n\r\n");
+        var headers = httpRequest.substring(0, headersEnd);
 
         var headersLines = headers.split("\r\n");
 
@@ -175,11 +220,11 @@ public class RequestParser {
         headersMap.put("path", httpDataLines[1]);
         headersMap.put("http", httpDataLines[2]);
 
-        return headersMap;
+        return requestAndRequestObject;
     }
 
-    public static HashMap<String, String> parseContentTypeHeader(String contentTypeHeader) {
-
+    public static HashMap<String, Object> parseContentTypeHeader(String httpRequest, Request requestObject) {
+        String contentTypeHeader = requestObject.headers.get("Content-Type");
         if (contentTypeHeader == null || contentTypeHeader.isBlank()) {
             return null;
         }
@@ -189,9 +234,17 @@ public class RequestParser {
         String[] parts = contentTypeHeader.split(";");
 
         String mediaType = parts[0].trim();
+
         result.put("Content-Type", mediaType);
+
+        HashMap<String, Object> requestAndRequestObject = new HashMap<>();
+        requestAndRequestObject.put("request", httpRequest);
+        requestAndRequestObject.put("requestObject", requestObject);
+
         if (parts.length == 1) {
-            return result;
+            requestObject.contentType = result;
+
+            return requestAndRequestObject;
         }
         for (int i = 1; i < parts.length; i++) {
             String part = parts[i].trim();
@@ -206,8 +259,9 @@ public class RequestParser {
         if (!result.containsKey("boundary")) {
             throw new IllegalArgumentException("Boundary not found in Content-Type header");
         }
+        requestObject.contentType = result;
 
-        return result;
+        return requestAndRequestObject;
     }
 
 }
