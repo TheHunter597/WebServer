@@ -1,0 +1,14 @@
+/target/
+/github/
+*.log
+*.class
+*.jar
+*.war
+*.iml
+*.idea/
+.DS_Store
+.vscode/
+env/
+/.mvn/
+/docs/
+.CODE_IMPROVEMENT_CHECKLIST.md
